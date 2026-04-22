@@ -1,0 +1,5 @@
+<Solution>
+  <Project Path="AbstractPayments.Core/AbstractPayments.Core.csproj" />
+  <Project Path="AbstractPayments.Sandbox/AbstractPayments.Sandbox.csproj" />
+  <Project Path="AbstractPayments.Tests/AbstractPayments.Tests.csproj" />
+</Solution>
