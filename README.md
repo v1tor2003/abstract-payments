@@ -20,40 +20,45 @@ The growth of e-commerce and systems like Pix in Brazil requires applications to
 * **Maintainability:** Ensure high cohesion and low coupling across the application's components.
 * **Extensibility:** Facilitate the creation of custom connectors for specialized providers.
 
-## 🏗️ Architecture & Technologies
+## Architecture & Technologies
 
 The framework is strictly designed around modern software engineering metrics to ensure a low Coupling Between Object classes (CBO) and high cohesion.
 
-* **Language/Runtime:** C# 14 / .NET 10
-* **Design Patterns:** Clean Architecture, SOLID Principles, Strategy/Adapter (for connectors)
-* **Testing:** xUnit (Unit and Integration testing in Sandboxed environments)
-* **CI/CD:** GitHub Actions for automated testing and NuGet distribution
-* **Containerization:** Docker for isolated validation environments
+*   **Language/Runtime**: C# 14 / .NET 10
+*   **Design Patterns**: Strategy, Factory, and Template Method
+*   **Architectural Style**: Modular Monolith with Plugin-Style Adapters
+*   **Testing**: xUnit with comprehensive mocking strategies
 
-## 📂 Solution Structure
+## Key Features
+
+*   **Unified Pix Module**: Standardized payment generation and status checking.
+*   **Automated Webhooks**: Strategy-based event parsing and signature validation.
+*   **Multi-Gateway Orchestration**: Runtime resolution and fallback support.
+*   **Zero Provider Coupling**: Business logic remains completely agnostic of gateway SDKs.
+
+## Solution Structure
 
 The repository is divided into three primary projects to separate concerns and facilitate testing:
 
-* `AbstractPayments.Core/`
-  * The heart of the framework. Contains the abstractions, interfaces, and base implementations. It has absolutely no dependencies on external gateway SDKs.
-* `AbstractPayments.Tests/`
-  * Comprehensive test suite utilizing xUnit to validate contracts and ensure the framework meets architectural metrics.
-* `AbstractPayments.Sandbox/`
-  * A lightweight ASP.NET Core Minimal API configured to run via Docker. It serves as a practical testing ground to simulate transactions and validate the framework's Dependency Injection integration.
+*   **[AbstractPayments.Core](file:///c:/Users/vitor/code/tcc/framework/AbstractPayments.Core/README.md)**: The heart of the framework. Contains the abstractions, interfaces, and base implementations.
+*   **[AbstractPayments.Tests](file:///c:/Users/vitor/code/tcc/framework/AbstractPayments.Tests/README.md)**: Comprehensive test suite validating both unit abstractions and integration flows.
+*   **[AbstractPayments.Sandbox](file:///c:/Users/vitor/code/tcc/framework/AbstractPayments.Sandbox/README.md)**: A practical testing ground for simulating transactions and validating DI integration.
 
-## 🚀 Getting Started
+## Getting Started
 
 ### Prerequisites
-* [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0)
-* [Docker Desktop](https://www.docker.com/products/docker-desktop/) (for running the Sandbox)
+*   [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0)
+*   [Docker Desktop](https://www.docker.com/products/docker-desktop/) (optional, for Sandbox containerization)
 
-### Running the Sandbox Environment
-
-To test the framework's integration locally, you can spin up the Sandbox Minimal API using Docker:
-
-```bash
-# Build the Docker image
-docker build -t abstract-payments-sandbox .
-
-# Run the container
-docker run -p 8080:8080 abstract-payments-sandbox
+### Quick Start
+1.  **Clone the repository**:
+    ```bash
+    git clone https://github.com/v1tor2003/abstract-payments.git
+    ```
+2.  **Explore the Core**: Check the [Core README](file:///c:/Users/vitor/code/tcc/framework/AbstractPayments.Core/README.md) to understand the architecture.
+3.  **Run the Sandbox**: Navigate to `AbstractPayments.Sandbox` and see its [README](file:///c:/Users/vitor/code/tcc/framework/AbstractPayments.Sandbox/README.md) for execution details.
+4.  **Run Tests**:
+    ```bash
+    dotnet test
+    ```
+    See the [Tests README](file:///c:/Users/vitor/code/tcc/framework/AbstractPayments.Tests/README.md) for more testing strategies.
