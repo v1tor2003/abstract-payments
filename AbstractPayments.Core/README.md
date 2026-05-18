@@ -1,19 +1,43 @@
-# Abstract.Payments.Core (for ASP.NET Core Minimal APIs / .NET 10)
+# Abstract.Payments.Core (for .NET 10)
 
 ## 1. Overview & Objectives
 
 This project is a **.NET Class Library (C# 14)** providing a unified abstraction layer for integrating multiple payment gateways. It is designed to be distributed as a NuGet package for ASP.NET Core applications.
 
-**TCC & Architectural Goals:**
-* **Zero Provider Coupling:** Business logic must never depend on concrete gateway SDKs.
-* **Plugin-Style Architecture:** Capabilities (Pix, Cards, KYC, Ledger) are isolated modules to prevent breaking changes.
-* **Gateway Swapping:** Change providers with minimal code alterations.
-* **Multi-Gateway Strategies:** Support for fallbacks, routing, and concurrent registrations.
+### 1.1 The Module-Plugin Hierarchy
+The framework follows a strict hierarchical structure to ensure scalability and maintainability:
 
-**Initial Scope (MVP):**
-* ✅ Pix payment generation.
-* ✅ Standardized Webhook / Event processing.
-* ❌ More Payment Methods / Ledger / KYC (planned as future plugins).
+1.  **Module**: A functional domain or business area (e.g., `Payment`, `Ledger`, `KYC`).
+2.  **Plugin**: A specific capability or feature within a module (e.g., `Pix`, `CreditCard`, `BankSlip`).
+3.  **Implementation / Adapter**: The concrete logic that fulfills a plugin's contract, e.g:
+    - For the **Payment Module**, the **Pix Plugin** can be implemented with one or more **Gateways** that supports it by the developer.
+    - For the **Webhook Module**, the **Processor Plugin** can be implemented with queues and memory.
+
+### 1.2 Architectural Goals
+*   **Zero Provider Coupling:** Business logic must never depend on concrete gateway SDKs.
+*   **Granular Capabilities (No God Classes):** Instead of monolithic interfaces, we break down responsibilities into specialized plugins.
+*   **Developer-Driven Implementation:** The framework provides the "blueprints" (interfaces), and developers implement the "machinery" (gateways, processors, etc.) for their specific needs.
+*   **Multi-Gateway Orchestration:** Support for fallbacks, routing, and concurrent registrations.
+
+### 1.3 Initial Scope (MVP)
+*   ✅ **Payment Module**: Currently supporting the `Pix` plugin.
+*   ✅ **Webhook Module**: Standardized event processing and signature validation.
+*   ❌ **Planned Modules**: Ledger, KYC, and additional Payment Method plugins (Credit Card, Bank Slip).
+
+---
+
+## 2. Architecture Philosophy: Why Plugins?
+
+### 2.1 Avoiding the "God Class" Trap
+A common pitfall in financial integrations is creating a single interface (like a "God Gateway") that attempts to handle every possible operation (Payments, Refunds, KYC, Ledger, etc.). This leads to:
+*   **Bloated Interfaces:** Implementations are forced to throw `NotImplementedException` for methods they don't support.
+*   **Tight Coupling:** Changes in one area (e.g., adding a new KYC field) force updates across all implementations.
+
+### 2.2 The "Subset of Capabilities" Approach
+By breaking the architecture into **Modules** and **Plugins**, we allow:
+*   **Specialized Implementation:** A developer implementing a Pix gateway only needs to worry about the `IPixPaymentGateway` interface.
+*   **Clean Separation:** Ledger logic stays in the Ledger module, and Payment logic stays in the Payment module.
+*   **Scalability:** New payment methods or business domains can be added as new plugins without breaking existing ones.
 
 ---
 
@@ -39,8 +63,8 @@ public interface IPaymentGateway
 }
 ```
 
-### 3.2 The Pix Module (Example of Implemented Contracts)
-Instead of forcing all payment types into one massive interface, Pix is treated as an isolated module contract. Provider adapters will implement this interface.
+### 3.2 The Payment Module (Pix Plugin Example)
+Instead of forcing all payment types into one massive interface, capabilities are treated as isolated plugins within a module. For example, the `Payment` module contains a `Pix` plugin contract. Provider adapters will implement this specific interface.
 
 ```csharp
 public interface IPixPaymentGateway : IPaymentGateway
@@ -187,21 +211,26 @@ builder.Services.AddAbstractPayments(options =>
 
 ---
 
-## 7. Suggested Folder Structure (Plugin-Ready)
+## 7. Suggested Folder Structure
+
+The directory structure reflects the Module-Plugin hierarchy, ensuring a clean separation of concerns.
 
 ```text
 /Abstract.Payments.Core
-  /Abstractions           // IPaymentGateway, IPaymentGatewayFactory
-  /Models                 // PaymentError
-  /Modules
-    /Pix
-      /Contracts          // IPixPaymentGateway, IPixPaymentOrchestrator
-      /Models             // PixPaymentRequest, PixPaymentResult
-  /Webhooks
-    /Contracts            // IWebhookProcessor, IWebhookEventParserStrategy
-    /Processors           // BaseWebhookProcessor
-  /Extensions
-    ServiceCollectionExtensions.cs  // AddAbstractPayments implementation
+  /Abstractions           // Base interfaces (IPaymentGateway, IPaymentGatewayFactory)
+  /Models                 // Shared domain models (PaymentError)
+  /Modules                // Grouped by business domain
+    /Payment              // The Payment Module
+      /Plugins            // Capabilities within the module
+        /Pix              
+          /Contracts      // IPixPaymentGateway, IPixPaymentOrchestrator
+          /Models         // PixPaymentRequest, PixPaymentResult
+        /CreditCard       // (Planned)
+    /Webhooks             // The Webhook Module
+      /Contracts          // IWebhookProcessor, IWebhookEventParserStrategy
+      /Processors         // BaseWebhookProcessor
+  /Extensions             // DI Registration
+    ServiceCollectionExtensions.cs
     PaymentFrameworkOptions.cs
 ```
 
