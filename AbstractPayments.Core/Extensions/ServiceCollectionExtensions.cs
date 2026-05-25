@@ -32,7 +32,7 @@ public static class ServiceCollectionExtensions
             services.Configure(configure);
         }
 
-        services.AddSingleton<IPaymentGatewayFactory, PaymentGatewayFactory>();
+        services.AddTransient<IPaymentGatewayFactory, PaymentGatewayFactory>();
 
         return new AbstractPaymentsBuilder(services);
     }
