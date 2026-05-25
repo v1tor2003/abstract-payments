@@ -4,7 +4,7 @@ using System;
 using System.Threading.Tasks;
 using AbstractPayments.Core.Abstractions.Webhooks;
 using AbstractPayments.Core.Exceptions;
-using AbstractPayments.Core.Extensions;
+using AbstractPayments.Core.Extensions.Options;
 using AbstractPayments.Core.Models.Webhooks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;

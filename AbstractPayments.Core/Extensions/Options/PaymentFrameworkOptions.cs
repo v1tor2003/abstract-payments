@@ -1,4 +1,4 @@
-namespace AbstractPayments.Core.Extensions;
+namespace AbstractPayments.Core.Extensions.Options;
 
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;

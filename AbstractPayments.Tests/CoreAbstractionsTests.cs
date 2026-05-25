@@ -10,6 +10,8 @@ using AbstractPayments.Core.Abstractions.Payments;
 using AbstractPayments.Core.Models;
 using AbstractPayments.Core.Exceptions;
 using AbstractPayments.Core.Extensions;
+using AbstractPayments.Core.Extensions.Options;
+using AbstractPayments.Core.Extensions.Payments;
 using Xunit;
 
 public class CoreAbstractionsTests
@@ -52,7 +54,7 @@ public class CoreAbstractionsTests
         // Arrange
         var services = new ServiceCollection();
         services.AddAbstractPayments()
-            .AddPaymentModule(payment =>
+            .AddPaymentsModule(payment =>
             {
                 // Register both capabilities under the same provider name "mercadopago" without collision
                 payment.AddProvider<IPixDummyGateway, PixMercadoPago>("mercadopago")
@@ -102,7 +104,7 @@ public class CoreAbstractionsTests
         // Act & Assert Registration throws
         Assert.Throws<InvalidOperationException>(() =>
         {
-            builder.AddPaymentModule(payment =>
+            builder.AddPaymentsModule(payment =>
             {
                 payment.AddProvider<IUnattributedDummyGateway, UnattributedGateway>("mercadopago");
             });
@@ -131,7 +133,7 @@ public class CoreAbstractionsTests
 
         // Act & Assert
         var options = provider.GetRequiredService<IOptions<PaymentFrameworkOptions>>();
-        Assert.Throws<OptionsValidationException>(() => _ = options.Value);
+        Assert.Throws<OptionsValidationException>(() => { _ = options.Value; });
     }
 
     [Fact]

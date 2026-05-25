@@ -3,6 +3,8 @@ namespace AbstractPayments.Core.Extensions;
 using System;
 using AbstractPayments.Core.Abstractions;
 using AbstractPayments.Core.Abstractions.Webhooks;
+using AbstractPayments.Core.Extensions.Options;
+using AbstractPayments.Core.Extensions.Payments;
 using AbstractPayments.Core.Extensions.Webhooks;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -41,7 +43,7 @@ public static class ServiceCollectionExtensions
     /// <param name="builder">The framework builder.</param>
     /// <param name="configure">The payments module builder delegate.</param>
     /// <returns>The original framework builder for fluent method-chaining.</returns>
-    public static IAbstractPaymentsBuilder AddPaymentModule(
+    public static IAbstractPaymentsBuilder AddPaymentsModule(
         this IAbstractPaymentsBuilder builder,
         Action<IPaymentModuleBuilder> configure)
     {
@@ -51,27 +53,12 @@ public static class ServiceCollectionExtensions
     }
 
     /// <summary>
-    /// Fluent builder extension to configure the Payments module plugins (Pix, CreditCard).
-    /// </summary>
-    /// <param name="builder">The framework builder.</param>
-    /// <param name="configure">The payments sub-builder callback.</param>
-    /// <returns>The original framework builder for fluent method-chaining.</returns>
-    public static IAbstractPaymentsBuilder AddPayments(
-        this IAbstractPaymentsBuilder builder,
-        Action<IPaymentsModuleBuilder> configure)
-    {
-        var paymentsBuilder = new PaymentsModuleBuilder(builder.Services);
-        configure(paymentsBuilder);
-        return builder;
-    }
-
-    /// <summary>
     /// Fluent builder extension to configure Webhooks event handling, signature validation, and retry counts.
     /// </summary>
     /// <param name="builder">The framework builder.</param>
     /// <param name="configure">The events handling sub-builder callback.</param>
     /// <returns>The original framework builder for fluent method-chaining.</returns>
-    public static IAbstractPaymentsBuilder AddEventsHandling(
+    public static IAbstractPaymentsBuilder AddEventsModule(
         this IAbstractPaymentsBuilder builder,
         Action<IEventsHandlingBuilder> configure)
     {
