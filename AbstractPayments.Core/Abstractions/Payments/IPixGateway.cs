@@ -1,6 +1,7 @@
 namespace AbstractPayments.Core.Abstractions;
 
 using System.Threading.Tasks;
+using AbstractPayments.Core.Abstractions.Payments;
 
 /// <summary>
 /// Specialized gateway contract representing a Pix capability gateway.

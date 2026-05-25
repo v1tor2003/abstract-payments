@@ -8,6 +8,4 @@ namespace AbstractPayments.Core.Models;
 public enum PaymentMethod
 {
     Pix,
-    CreditCard,
-    BankSlip
 }

@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using AbstractPayments.Core.Abstractions;
+using AbstractPayments.Core.Abstractions.Payments;
 using AbstractPayments.Core.Models;
 using AbstractPayments.Core.Exceptions;
 using AbstractPayments.Core.Extensions;
