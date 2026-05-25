@@ -1,4 +1,4 @@
-namespace AbstractPayments.Core.Extensions;
+namespace AbstractPayments.Core.Extensions.Payments;
 
 using AbstractPayments.Core.Abstractions;
 using Microsoft.Extensions.DependencyInjection;

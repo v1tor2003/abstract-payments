@@ -4,6 +4,7 @@ using System;
 using System.Reflection;
 using AbstractPayments.Core.Abstractions;
 using AbstractPayments.Core.Abstractions.Payments;
+using AbstractPayments.Core.Extensions.Payments;
 using Microsoft.Extensions.DependencyInjection;
 
 /// <summary>

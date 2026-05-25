@@ -7,6 +7,8 @@ using AbstractPayments.Core.Abstractions.Webhooks;
 using AbstractPayments.Core.Abstractions;
 using AbstractPayments.Core.Exceptions;
 using AbstractPayments.Core.Extensions;
+using AbstractPayments.Core.Extensions.Options;
+using AbstractPayments.Core.Extensions.Payments;
 using AbstractPayments.Core.Extensions.Webhooks;
 using AbstractPayments.Core.Models.Webhooks;
 using AbstractPayments.Core.Processors.Webhooks;
@@ -67,11 +69,7 @@ public class WebhookProcessorTests
         // Arrange
         var services = new ServiceCollection();
         services.AddAbstractPayments()
-            .AddPayments(opts =>
-            {
-                opts.Pix.AddProvider<DummyPixGateway>("testprovider");
-            })
-            .AddEventsHandling(opts =>
+            .AddEventsModule(opts =>
             {
                 opts.Endpoint = "/v1/api/payments/webhook";
                 opts.SignatureValidators.UseStrategy<DummySignatureValidator>("testprovider");
@@ -79,6 +77,8 @@ public class WebhookProcessorTests
                 opts.Handlers.AddHandler<DummyEventHandler>("testprovider");
                 opts.RetryCount = 3;
             });
+
+        services.AddKeyedScoped<IPixGateway, DummyPixGateway>("Pix:testprovider");
 
         var provider = services.BuildServiceProvider();
 
@@ -107,7 +107,7 @@ public class WebhookProcessorTests
         var dummyEvent = new WebhookEvent("evt_123", "testprovider", DateTime.UtcNow, "{}");
 
         services.AddAbstractPayments()
-            .AddEventsHandling(opts =>
+            .AddEventsModule(opts =>
             {
                 opts.SignatureValidators.UseStrategy<DummySignatureValidator>("testprovider", v => v.ShouldValidate = false);
             });
@@ -129,7 +129,7 @@ public class WebhookProcessorTests
         // Arrange
         var services = new ServiceCollection();
         services.AddAbstractPayments()
-            .AddEventsHandling(opts =>
+            .AddEventsModule(opts =>
             {
                 opts.SignatureValidators.UseStrategy<DummySignatureValidator>("testprovider");
             });
@@ -151,7 +151,7 @@ public class WebhookProcessorTests
         var dummyEvent = new WebhookEvent("evt_123", "testprovider", DateTime.UtcNow, "{}");
 
         services.AddAbstractPayments()
-            .AddEventsHandling(opts =>
+            .AddEventsModule(opts =>
             {
                 opts.SignatureValidators.UseStrategy<DummySignatureValidator>("testprovider");
                 opts.RetryCount = 3;
@@ -180,7 +180,7 @@ public class WebhookProcessorTests
         var dummyEvent = new WebhookEvent("evt_123", "testprovider", DateTime.UtcNow, "{}");
 
         services.AddAbstractPayments()
-            .AddEventsHandling(opts =>
+            .AddEventsModule(opts =>
             {
                 opts.SignatureValidators.UseStrategy<DummySignatureValidator>("testprovider");
                 opts.RetryCount = 2; // Will run: attempt 0 (fail), attempt 1 (fail), attempt 2 (fail) -> exhaust

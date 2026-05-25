@@ -1,4 +1,4 @@
-namespace AbstractPayments.Core.Extensions;
+namespace AbstractPayments.Core.Extensions.Payments;
 
 using Microsoft.Extensions.DependencyInjection;
 
@@ -7,7 +7,7 @@ using Microsoft.Extensions.DependencyInjection;
 /// </summary>
 public interface IPaymentModuleBuilder
 {
-    /// <summary>
+    /// <summary>   
     /// Gets the application service collection.
     /// </summary>
     IServiceCollection Services { get; }
