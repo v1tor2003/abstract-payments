@@ -39,4 +39,19 @@ public static class PaymentModuleBuilderExtensions
 
         return builder;
     }
+
+    /// <summary>
+    /// Semantically registers a Pix capability provider fluently under a unique Pix composite key (Pix:name).
+    /// </summary>
+    /// <typeparam name="TImpl">The concrete gateway Pix implementation class.</typeparam>
+    /// <param name="builder">The payments module builder.</param>
+    /// <param name="name">The unique provider name identifier.</param>
+    /// <returns>The module builder for fluent chaining.</returns>
+    public static IPaymentModuleBuilder AddPixProvider<TImpl>(
+        this IPaymentModuleBuilder builder,
+        string name)
+        where TImpl : class, IPixGateway
+    {
+        return builder.AddProvider<IPixGateway, TImpl>(name);
+    }
 }
