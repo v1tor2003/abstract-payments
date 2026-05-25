@@ -3,6 +3,7 @@ namespace AbstractPayments.Core.Extensions;
 using System;
 using System.Reflection;
 using AbstractPayments.Core.Abstractions;
+using AbstractPayments.Core.Abstractions.Payments;
 using Microsoft.Extensions.DependencyInjection;
 
 /// <summary>

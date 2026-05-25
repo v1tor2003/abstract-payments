@@ -2,6 +2,8 @@ namespace AbstractPayments.Core.Extensions;
 
 using System;
 using AbstractPayments.Core.Abstractions;
+using AbstractPayments.Core.Abstractions.Webhooks;
+using AbstractPayments.Core.Extensions.Webhooks;
 using Microsoft.Extensions.DependencyInjection;
 
 /// <summary>
@@ -45,6 +47,45 @@ public static class ServiceCollectionExtensions
     {
         var moduleBuilder = new PaymentModuleBuilder(builder.Services);
         configure(moduleBuilder);
+        return builder;
+    }
+
+    /// <summary>
+    /// Fluent builder extension to configure the Payments module plugins (Pix, CreditCard).
+    /// </summary>
+    /// <param name="builder">The framework builder.</param>
+    /// <param name="configure">The payments sub-builder callback.</param>
+    /// <returns>The original framework builder for fluent method-chaining.</returns>
+    public static IAbstractPaymentsBuilder AddPayments(
+        this IAbstractPaymentsBuilder builder,
+        Action<IPaymentsModuleBuilder> configure)
+    {
+        var paymentsBuilder = new PaymentsModuleBuilder(builder.Services);
+        configure(paymentsBuilder);
+        return builder;
+    }
+
+    /// <summary>
+    /// Fluent builder extension to configure Webhooks event handling, signature validation, and retry counts.
+    /// </summary>
+    /// <param name="builder">The framework builder.</param>
+    /// <param name="configure">The events handling sub-builder callback.</param>
+    /// <returns>The original framework builder for fluent method-chaining.</returns>
+    public static IAbstractPaymentsBuilder AddEventsHandling(
+        this IAbstractPaymentsBuilder builder,
+        Action<IEventsHandlingBuilder> configure)
+    {
+        var eventsBuilder = new EventsHandlingBuilder(builder.Services);
+        configure(eventsBuilder);
+
+        builder.Services.Configure<WebhookOptions>(options =>
+        {
+            options.Endpoint = eventsBuilder.Endpoint;
+            options.RetryCount = eventsBuilder.RetryCount;
+        });
+
+        builder.Services.AddScoped<IWebhookProcessor, Processors.Webhooks.WebhookProcessor>();
+
         return builder;
     }
 }
