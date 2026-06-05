@@ -2,6 +2,7 @@ namespace AbstractPayments.Core.Abstractions;
 
 using System.Threading.Tasks;
 using AbstractPayments.Core.Abstractions.Payments;
+using AbstractPayments.Core.Models.Payments;
 
 /// <summary>
 /// Specialized gateway contract representing a Pix capability gateway.
@@ -10,14 +11,17 @@ using AbstractPayments.Core.Abstractions.Payments;
 public interface IPixGateway : IPaymentGateway
 {
     /// <summary>
-    /// Generates a Pix payment.
+    /// Generates a Pix payment for the specified request.
     /// </summary>
-    /// <returns>A QR code or payment string.</returns>
-    Task<string> GeneratePaymentAsync();
+    Task<TResponse> GeneratePaymentAsync<TRequest, TResponse>(TRequest request)
+        where TRequest : class
+        where TResponse : class;
 
     /// <summary>
     /// Gets a refund status or execution for Pix.
     /// </summary>
-    /// <returns>A refund representation string.</returns>
-    Task<string> GetRefundAsync();
+    Task<TResponse> GetRefundAsync<TRequest, TResponse>(TRequest request)
+        where TRequest : class
+        where TResponse : class;
 }
+

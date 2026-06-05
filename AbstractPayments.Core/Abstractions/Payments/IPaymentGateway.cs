@@ -1,5 +1,7 @@
 namespace AbstractPayments.Core.Abstractions;
 
+using System.Threading.Tasks;
+
 /// <summary>
 /// Core contract representing a stateless payment gateway provider.
 /// </summary>
@@ -10,3 +12,4 @@ public interface IPaymentGateway
     /// </summary>
     string Name { get; }
 }
+
