@@ -11,12 +11,14 @@ using AbstractPayments.Sandbox.Storage.Models;
 using System.IO;
 using AbstractPayments.Core.Abstractions.Webhooks;
 using AbstractPayments.Core.Models.Webhooks;
+using AbstractPayments.Core.Models.Payments;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
-using Microsoft.Extensions.Logging;
+using AbstractPayments.Sandbox.Requests;
+using AbstractPayments.Sandbox.Responses;
 
 /// <summary>
 /// Vertical slice mapping the framework-decoupled Pix payment routes.
@@ -46,7 +48,7 @@ public class AbstractedPixEndpoints : IEndpoint
             .Produces<Transaction>(StatusCodes.Status200OK)
             .Produces(StatusCodes.Status404NotFound);
 
-        app.MapPost("/v1/api/payments/webhook", HandleAbstractedWebhookAsync)
+        app.MapPost("/v1/api/payments/webhook/{provider}", HandleAbstractedWebhookAsync)
             .WithTags("Framework Payments (Decoupled Approach)")
             .WithSummary("Handle Webhook Notification (Framework)")
             .WithDescription("Processes a payment webhook notification. Completely delegated to the core IWebhookProcessor orchestration engine.")
@@ -55,6 +57,7 @@ public class AbstractedPixEndpoints : IEndpoint
     }
 
     private static async Task<IResult> HandleAbstractedWebhookAsync(
+        string provider,
         HttpRequest httpRequest,
         [FromServices] IWebhookProcessor processor,
         [FromServices] ILogger<AbstractedPixEndpoints> logger)
@@ -68,12 +71,13 @@ public class AbstractedPixEndpoints : IEndpoint
             headers[header.Key] = header.Value.ToString();
         }
 
-        var context = new WebhookContext("fake", rawBody, headers);
+        var context = new WebhookContext(provider, rawBody, headers);
 
         await processor.ProcessAsync(context);
 
         return TypedResults.NoContent();
     }
+
 
     private static async Task<Ok<AbstractedPixResponse>> CreateAbstractedPixPaymentAsync(
         [FromBody] AbstractedPixRequest request,
@@ -94,14 +98,20 @@ public class AbstractedPixEndpoints : IEndpoint
         logger.LogPaymentInitiated(request.Amount, request.Provider);
 
         var gateway = gatewayFactory.Get<IPixGateway>(request.Provider);
-        var paymentString = await gateway.GeneratePaymentAsync();
+        var pixRequest = new PixPaymentRequest(request.Amount, "Pix checkout through framework", "12345678909");
+        var result = await gateway.GeneratePaymentAsync<PixPaymentRequest, PixPaymentResult>(pixRequest);
+
+        if (!result.Success)
+        {
+            throw new InvalidOperationException(result.Error?.Message ?? "Payment generation failed.");
+        }
 
         var transaction = new Transaction
         {
             Id = Guid.NewGuid().ToString(),
             Amount = request.Amount,
             Provider = request.Provider,
-            PaymentString = paymentString,
+            PaymentString = result.QrCode,
             Status = ETransactionStatus.Pending,
             CreatedAt = DateTime.UtcNow
         };
