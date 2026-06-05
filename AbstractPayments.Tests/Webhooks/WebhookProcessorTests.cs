@@ -11,6 +11,7 @@ using AbstractPayments.Core.Extensions.Options;
 using AbstractPayments.Core.Extensions.Payments;
 using AbstractPayments.Core.Extensions.Webhooks;
 using AbstractPayments.Core.Models.Webhooks;
+using AbstractPayments.Core.Models.Payments;
 using AbstractPayments.Core.Processors.Webhooks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
@@ -59,9 +60,24 @@ public class WebhookProcessorTests
     private class DummyPixGateway : IPixGateway
     {
         public string Name => "testprovider";
-        public Task<string> GeneratePaymentAsync() => Task.FromResult("qr-code");
-        public Task<string> GetRefundAsync() => Task.FromResult("refund");
+        
+        public Task<TResponse> GeneratePaymentAsync<TRequest, TResponse>(TRequest request)
+            where TRequest : class
+            where TResponse : class
+        {
+            var result = new PixPaymentResult(true, "ext_123", "qr-code", "qr-code-image");
+            return Task.FromResult((TResponse)(object)result);
+        }
+
+        public Task<TResponse> GetRefundAsync<TRequest, TResponse>(TRequest request)
+            where TRequest : class
+            where TResponse : class
+        {
+            var result = "refund";
+            return Task.FromResult((TResponse)(object)result);
+        }
     }
+
 
     [Fact]
     public void DI_Fluent_Configuration_Should_Register_All_Keyed_Services()
@@ -71,7 +87,7 @@ public class WebhookProcessorTests
         services.AddAbstractPayments()
             .AddEventsModule(opts =>
             {
-                opts.Endpoint = "/v1/api/payments/webhook";
+                opts.IngestionEndpoint = "/v1/api/payments/webhook";
                 opts.SignatureValidators.UseStrategy<DummySignatureValidator>("testprovider");
                 opts.Converters.AddConverter<DummyEventConverter>("testprovider");
                 opts.Handlers.AddHandler<DummyEventHandler>("testprovider");
@@ -95,7 +111,7 @@ public class WebhookProcessorTests
         Assert.NotNull(processor);
         Assert.NotNull(options);
 
-        Assert.Equal("/v1/api/payments/webhook", options.Value.Endpoint);
+        Assert.Equal("/v1/api/payments/webhook", options.Value.IngestionEndpoint);
         Assert.Equal(3, options.Value.RetryCount);
     }
 

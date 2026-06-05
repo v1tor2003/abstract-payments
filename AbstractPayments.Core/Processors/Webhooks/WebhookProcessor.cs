@@ -15,23 +15,23 @@ using Microsoft.Extensions.Options;
 public class WebhookProcessor : IWebhookProcessor
 {
     private readonly IServiceProvider _serviceProvider;
-    private readonly IOptions<WebhookOptions> _options;
+    private readonly IWebhookQueue _queue;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="WebhookProcessor"/> class.
     /// </summary>
     /// <param name="serviceProvider">The application service provider.</param>
-    /// <param name="options">The configured webhook options.</param>
-    public WebhookProcessor(IServiceProvider serviceProvider, IOptions<WebhookOptions> options)
+    /// <param name="queue">The webhook queue.</param>
+    public WebhookProcessor(IServiceProvider serviceProvider, IWebhookQueue queue)
     {
         _serviceProvider = serviceProvider;
-        _options = options;
+        _queue = queue;
     }
 
     /// <inheritdoc />
     public async Task ProcessAsync(WebhookContext context)
     {
-        if (context == null) throw new ArgumentNullException(nameof(context));
+        ArgumentNullException.ThrowIfNull(context);
 
         string provider = context.Provider;
 
@@ -62,31 +62,7 @@ public class WebhookProcessor : IWebhookProcessor
             throw new InvalidOperationException($"Converter for provider '{provider}' returned a null WebhookEvent.");
         }
 
-        string handlerKey = $"handler:{provider}";
-        var handler = _serviceProvider.GetKeyedService<IWebhookEventHandler>(handlerKey);
-        if (handler == null)
-        {
-            throw new ProviderConfigurationException(provider, "IWebhookEventHandler");
-        }
-
-        int retryLimit = _options.Value?.RetryCount ?? 0;
-        int attempt = 0;
-        Exception? lastException = null;
-
-        while (attempt <= retryLimit)
-        {
-            try
-            {
-                await handler.HandleAsync(@event);
-                return;
-            }
-            catch (Exception ex)
-            {
-                lastException = ex;
-                attempt++;
-            }
-        }
-
-        throw new WebhookProcessingException(provider, lastException!);
+        // Delegate event processing to the queue on the consumer side
+        await _queue.EnqueueAsync(@event);
     }
 }

@@ -3,11 +3,17 @@ using System.Reflection;
 using AbstractPayments.Core.Abstractions;
 using AbstractPayments.Core.Extensions;
 using AbstractPayments.Core.Extensions.Payments;
+using AbstractPayments.Core.Extensions.Webhooks;
 using AbstractPayments.Sandbox.Coupled;
 using AbstractPayments.Sandbox.Endpoints;
 using AbstractPayments.Sandbox.Gateways;
 using AbstractPayments.Sandbox.Storage;
 using AbstractPayments.Sandbox.Gateways.Webhooks;
+using AbstractPayments.Sandbox.Http;
+using AbstractPayments.Sandbox.Requests;
+using AbstractPayments.Sandbox.Responses;
+using AbstractPayments.Core.Abstractions.Webhooks;
+using AbstractPayments.Sandbox.Services;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -19,8 +25,20 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddSingleton<IDbConnectionFactory, DbConnectionFactory>();
 builder.Services.AddScoped<ITransactionRepository, TransactionRepository>();
 
-// Register Coupled Fake Client
-builder.Services.AddSingleton<FakeDirectClient>();
+// Register Webhook Queue & Background Worker
+builder.Services.AddSingleton<InMemoryWebhookQueue>();
+builder.Services.AddSingleton<IWebhookQueue>(sp => sp.GetRequiredService<InMemoryWebhookQueue>());
+builder.Services.AddHostedService<WebhookQueueProcessor>();
+
+// Register Coupled Clients
+builder.Services.AddHttpClient<ApiClient>(client =>
+{
+    client.BaseAddress = new Uri("https://api.gateway-sandbox.com");
+});
+
+builder.Services.AddScoped<MercadoPagoDirectClient>();
+builder.Services.AddScoped<PagSeguroDirectClient>();
+builder.Services.AddScoped<EfiBankDirectClient>();
 
 // Register Authentication & Authorization services as required by middleware sequence standards
 builder.Services.AddAuthentication();
@@ -37,14 +55,28 @@ builder.Services.AddOpenApi();
 builder.Services.AddAbstractPayments()
     .AddPaymentsModule(payment =>
     {
-        payment.AddProvider<IPixGateway, FakePixGateway>("fake");
+        payment.AddProvider<IPixGateway, MercadoPagoPixGateway>("mercadopago");
+        payment.AddProvider<IPixGateway, PagSeguroPixGateway>("pagseguro");
+        payment.AddProvider<IPixGateway, EfiBankPixGateway>("efibank");
     })
     .AddEventsModule(events =>
     {
-        events.Endpoint = "/v1/api/payments/webhook";
-        events.SignatureValidators.UseStrategy<FakeSignatureValidator>("fake");
-        events.Converters.AddConverter<FakeEventConverter>("fake");
-        events.Handlers.AddHandler<FakeEventHandler>("fake");
+        events.IngestionEndpoint = "/v1/api/payments/webhook";
+
+        events.ListenFrom("mercadopago", options => options
+            .UseSignatureValidator<MercadoPagoSignatureValidator>()
+            .UseConverter<MercadoPagoEventConverter>()
+            .UseHandler<MercadoPagoEventHandler>());
+
+        events.ListenFrom("pagseguro", options => options
+            .UseSignatureValidator<PagSeguroSignatureValidator>()
+            .UseConverter<PagSeguroEventConverter>()
+            .UseHandler<PagSeguroEventHandler>());
+
+        events.ListenFrom("efibank", options => options
+            .UseSignatureValidator<EfiBankSignatureValidator>()
+            .UseConverter<EfiBankEventConverter>()
+            .UseHandler<EfiBankEventHandler>());
     });
 
 // Register Assembly-Scanned IEndpoint implementations
@@ -78,15 +110,3 @@ app.Run();
 
 // Expose Program class for WebApplicationFactory in integration tests
 public partial class Program { }
-
-// DTO Requests and Responses (shared across endpoints)
-public record CoupledPixRequest(decimal Amount);
-public record AbstractedPixRequest(decimal Amount, string Provider);
-public record AbstractedPixResponse(
-    string TransactionId,
-    decimal Amount,
-    string Provider,
-    string PaymentString,
-    string Status,
-    DateTime CreatedAt
-);

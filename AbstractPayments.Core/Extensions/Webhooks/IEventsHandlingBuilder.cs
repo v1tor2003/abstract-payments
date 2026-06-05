@@ -15,7 +15,7 @@ public interface IEventsHandlingBuilder
     /// <summary>
     /// Gets or sets the webhook ingestion HTTP route endpoint.
     /// </summary>
-    string Endpoint { get; set; }
+    string IngestionEndpoint { get; set; }
 
     /// <summary>
     /// Gets or sets the number of retry attempts for failed handlers.
@@ -52,7 +52,7 @@ internal class EventsHandlingBuilder : IEventsHandlingBuilder
     public IServiceCollection Services { get; }
 
     /// <inheritdoc />
-    public string Endpoint { get; set; } = "/v1/api/payments/webhook";
+    public string IngestionEndpoint { get; set; } = "/v1/api/payments/webhook";
 
     /// <inheritdoc />
     public int RetryCount { get; set; } = 3;

@@ -7,6 +7,7 @@ using AbstractPayments.Core.Extensions.Options;
 using AbstractPayments.Core.Extensions.Payments;
 using AbstractPayments.Core.Extensions.Webhooks;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 
 /// <summary>
 /// Service collection extension bootstrapping points for registering the AbstractPayments framework natively.
@@ -67,11 +68,12 @@ public static class ServiceCollectionExtensions
 
         builder.Services.Configure<WebhookOptions>(options =>
         {
-            options.Endpoint = eventsBuilder.Endpoint;
+            options.IngestionEndpoint = eventsBuilder.IngestionEndpoint;
             options.RetryCount = eventsBuilder.RetryCount;
         });
 
         builder.Services.AddScoped<IWebhookProcessor, Processors.Webhooks.WebhookProcessor>();
+        builder.Services.TryAddSingleton<IWebhookQueue, Processors.Webhooks.SynchronousWebhookQueue>();
 
         return builder;
     }
