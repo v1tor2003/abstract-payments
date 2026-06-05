@@ -1,7 +1,10 @@
 using System;
 using System.Threading.Tasks;
-using AbstractPayments.Sandbox.Http;
 using AbstractPayments.Sandbox.Http.Commands;
+using MercadoPago.Client.Common;
+using MercadoPago.Client.Payment;
+using MercadoPago.Config;
+using MercadoPago.Resource.Payment;
 
 namespace AbstractPayments.Sandbox.Coupled;
 
@@ -10,14 +13,11 @@ namespace AbstractPayments.Sandbox.Coupled;
 /// </summary>
 public class MercadoPagoDirectClient
 {
-    private readonly ApiClient _apiClient;
-
     /// <summary>
     /// Initializes a new instance of the <see cref="MercadoPagoDirectClient"/> class.
     /// </summary>
-    public MercadoPagoDirectClient(ApiClient apiClient)
+    public MercadoPagoDirectClient()
     {
-        _apiClient = apiClient;
     }
 
     /// <summary>
@@ -30,24 +30,44 @@ public class MercadoPagoDirectClient
             throw new ArgumentException("Amount must be greater than zero", nameof(amount));
         }
 
-        var request = new MercadoPagoPixRequest(
-            TransactionAmount: amount,
-            Description: "Direct coupled payment Mercado Pago",
-            PaymentMethodId: "pix",
-            Payer: new MercadoPagoPayer(
-                Email: "payer@coupled.com",
-                Identification: new MercadoPagoPayerIdentification("CPF", "12345678909")
-            )
-        );
+        if (string.IsNullOrEmpty(MercadoPagoConfig.AccessToken))
+        {
+            MercadoPagoConfig.AccessToken = "TEST-CoupledAccessToken";
+        }
 
-        var command = new CreateMercadoPagoPixCommand(request);
-        var response = await _apiClient.SendAsync(command);
+        var request = new PaymentCreateRequest
+        {
+            TransactionAmount = amount,
+            Description = "Direct coupled payment Mercado Pago",
+            PaymentMethodId = "pix",
+            Payer = new PaymentPayerRequest
+            {
+                Email = "payer@coupled.com",
+                Identification = new IdentificationRequest
+                {
+                    Type = "CPF",
+                    Number = "12345678909"
+                }
+            }
+        };
 
-        if (response == null)
+        var client = new PaymentClient();
+        Payment payment = await client.CreateAsync(request);
+
+        if (payment == null)
         {
             throw new InvalidOperationException("Failed to generate payment from Mercado Pago direct client");
         }
 
-        return response;
+        return new MercadoPagoPixResponse(
+            Id: payment.Id ?? 0,
+            Status: payment.Status,
+            PointOfInteraction: new MercadoPagoPointOfInteraction(
+                TransactionData: new MercadoPagoTransactionData(
+                    QrCode: payment.PointOfInteraction?.TransactionData?.QrCode ?? string.Empty,
+                    QrCodeBase64: payment.PointOfInteraction?.TransactionData?.QrCodeBase64 ?? string.Empty
+                )
+            )
+        );
     }
 }

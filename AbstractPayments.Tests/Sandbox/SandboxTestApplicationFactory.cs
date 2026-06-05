@@ -21,9 +21,13 @@ public class MockHttpMessageHandler : HttpMessageHandler
     public Func<HttpRequestMessage, HttpResponseMessage> Handler { get; set; } = 
         req => new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent("{}") };
 
-    protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+    protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
     {
-        return Task.FromResult(Handler(request));
+        var response = Handler(request);
+        var content = response.Content != null ? await response.Content.ReadAsStringAsync() : "null";
+        Console.WriteLine($"[TEST MOCK HTTP] Request: {request.Method} {request.RequestUri}");
+        Console.WriteLine($"[TEST MOCK HTTP] Response Content: {content}");
+        return response;
     }
 }
 
@@ -61,6 +65,10 @@ public class SandboxTestApplicationFactory : WebApplicationFactory<Program>
                 client.BaseAddress = new Uri("http://localhost");
             })
             .ConfigurePrimaryHttpMessageHandler(() => MockHttpHandler);
+
+            // Configure global static MercadoPago SDK HttpClient to route through our MockHttpMessageHandler
+            var mockSdkClient = new HttpClient(MockHttpHandler);
+            MercadoPago.Config.MercadoPagoConfig.HttpClient = new MercadoPago.Http.DefaultHttpClient(mockSdkClient);
         });
     }
 

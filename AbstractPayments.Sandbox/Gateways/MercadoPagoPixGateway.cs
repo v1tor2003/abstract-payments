@@ -2,27 +2,26 @@ using System;
 using System.Threading.Tasks;
 using AbstractPayments.Core.Abstractions;
 using AbstractPayments.Core.Models.Payments;
-using AbstractPayments.Sandbox.Http;
-using AbstractPayments.Sandbox.Http.Commands;
+using MercadoPago.Client.Common;
+using MercadoPago.Client.Payment;
+using MercadoPago.Config;
+using MercadoPago.Resource.Payment;
 
 namespace AbstractPayments.Sandbox.Gateways;
 
 /// <summary>
-/// Framework-compliant adapter implementing IPixGateway using Mercado Pago API commands.
+/// Framework-compliant adapter implementing IPixGateway wrapping the official Mercado Pago SDK.
 /// </summary>
 public class MercadoPagoPixGateway : IPixGateway
 {
-    private readonly ApiClient _apiClient;
-
     /// <inheritdoc />
     public string Name => "mercadopago";
 
     /// <summary>
     /// Initializes a new instance of the <see cref="MercadoPagoPixGateway"/> class.
     /// </summary>
-    public MercadoPagoPixGateway(ApiClient apiClient)
+    public MercadoPagoPixGateway()
     {
-        _apiClient = apiClient;
     }
 
     /// <inheritdoc />
@@ -40,21 +39,32 @@ public class MercadoPagoPixGateway : IPixGateway
             throw new ArgumentException($"Unsupported response type: {typeof(TResponse).Name}");
         }
 
-        var mpRequest = new MercadoPagoPixRequest(
-            TransactionAmount: pixRequest.Amount,
-            Description: pixRequest.Description,
-            PaymentMethodId: "pix",
-            Payer: new MercadoPagoPayer(
-                Email: "payer@abstracted.com",
-                Identification: new MercadoPagoPayerIdentification("CPF", pixRequest.PayerDocument)
-            )
-        );
+        if (string.IsNullOrEmpty(MercadoPagoConfig.AccessToken))
+        {
+            MercadoPagoConfig.AccessToken = "TEST-DecoupledAccessToken";
+        }
 
-        var command = new CreateMercadoPagoPixCommand(mpRequest);
-        var response = await _apiClient.SendAsync(command);
+        var mpRequest = new PaymentCreateRequest
+        {
+            TransactionAmount = pixRequest.Amount,
+            Description = pixRequest.Description,
+            PaymentMethodId = "pix",
+            Payer = new PaymentPayerRequest
+            {
+                Email = "payer@abstracted.com",
+                Identification = new IdentificationRequest
+                {
+                    Type = "CPF",
+                    Number = pixRequest.PayerDocument
+                }
+            }
+        };
+
+        var client = new PaymentClient();
+        Payment payment = await client.CreateAsync(mpRequest);
 
         PixPaymentResult result;
-        if (response == null)
+        if (payment == null)
         {
             result = new PixPaymentResult(
                 Success: false,
@@ -68,9 +78,9 @@ public class MercadoPagoPixGateway : IPixGateway
         {
             result = new PixPaymentResult(
                 Success: true,
-                ExternalId: response.Id.ToString(),
-                QrCode: response.PointOfInteraction.TransactionData.QrCode,
-                QrCodeImage: response.PointOfInteraction.TransactionData.QrCodeBase64
+                ExternalId: payment.Id?.ToString() ?? string.Empty,
+                QrCode: payment.PointOfInteraction?.TransactionData?.QrCode ?? string.Empty,
+                QrCodeImage: payment.PointOfInteraction?.TransactionData?.QrCodeBase64 ?? string.Empty
             );
         }
 
