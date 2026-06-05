@@ -20,6 +20,7 @@ using Xunit;
 /// <summary>
 /// E2E Integration tests verifying coupled vs abstracted Minimal API payment endpoints.
 /// </summary>
+[Collection("Sandbox Tests")]
 public class SandboxPaymentIntegrationTests : IClassFixture<SandboxTestApplicationFactory>
 {
     private readonly SandboxTestApplicationFactory _factory;

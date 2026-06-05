@@ -15,6 +15,7 @@ using Xunit;
 /// <summary>
 /// E2E Integration tests verifying webhook endpoints for all payment gateway strategies.
 /// </summary>
+[Collection("Sandbox Tests")]
 public class SandboxWebhookIntegrationTests : IClassFixture<SandboxTestApplicationFactory>
 {
     private readonly SandboxTestApplicationFactory _factory;
