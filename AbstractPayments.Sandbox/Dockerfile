@@ -3,10 +3,11 @@ FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /src
 
 # Copy solution and project files to cache restore
-COPY ["AbstractPayments.sln", "./"]
+COPY ["AbstractPayments.slnx", "./"]
 COPY ["AbstractPayments.Core/AbstractPayments.Core.csproj", "AbstractPayments.Core/"]
 COPY ["AbstractPayments.Sandbox/AbstractPayments.Sandbox.csproj", "AbstractPayments.Sandbox/"]
 COPY ["AbstractPayments.Tests/AbstractPayments.Tests.csproj", "AbstractPayments.Tests/"]
+COPY ["AbstractPayments.Benchmarks/AbstractPayments.Benchmarks.csproj", "AbstractPayments.Benchmarks/"]
 
 RUN dotnet restore
 
