@@ -33,6 +33,9 @@ jobs:
     needs: build-and-test
     if: github.event_name == 'release'
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
     
     steps:
     - uses: actions/checkout@v4
@@ -44,6 +47,12 @@ jobs:
 
     - name: Pack Core Library
       run: dotnet pack AbstractPayments.Core/AbstractPayments.Core.csproj -c Release -o ./artifacts /p:Version=${{ github.event.release.tag_name }}
+
+    - name: NuGet login (OIDC → temp API key)
+      uses: NuGet/login@v1
+      id: login
+      with:
+        user: v1tor2003
       
     - name: Push to NuGet
-      run: dotnet nuget push ./artifacts/*.nupkg -k ${{ secrets.NUGET_API_KEY }} -s https://api.nuget.org/v3/index.json
+      run: dotnet nuget push ./artifacts/*.nupkg -k ${{ steps.login.outputs.NUGET_API_KEY }} -s https://api.nuget.org/v3/index.json

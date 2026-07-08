@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <AssemblyName>AbstractPayments.Benchmarks</AssemblyName>
+    <RootNamespace>AbstractPayments.Benchmarks</RootNamespace>
+    <Description>Load and throughput benchmarks for the AbstractPayments webhook ingestion pipeline.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\AbstractPayments.Core\AbstractPayments.Core.csproj" />
+    <ProjectReference Include="..\AbstractPayments.Sandbox\AbstractPayments.Sandbox.csproj" />
+  </ItemGroup>
+
+</Project>
